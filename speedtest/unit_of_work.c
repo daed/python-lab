@@ -34,17 +34,17 @@ void calculate_primes(int limit) {
     free(is_prime); // Don't forget to free the allocated memory
 }
 
-void unit_of_work(int limit) {
+double unit_of_work(int limit) {
     clock_t start_time = clock();
     calculate_primes(limit);
     clock_t end_time = clock();
     double elapsed_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
-    printf("- elapsed time: %fs\n", elapsed_time);
+    return elapsed_time;
 }
 
 int main() {
     int limit = 100000; // You can adjust the limit here
-    unit_of_work(limit);
-    printf("finished\n");
+    double elapsed_time = unit_of_work(limit);
+    printf("%f", elapsed_time);
     return 0;
 }

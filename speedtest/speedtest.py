@@ -2,130 +2,119 @@
 """This program compiles and calls a function in a c++ library."""
 import ctypes
 import subprocess
-import time
-import sys
 import unit_of_work_py as pymodule
-import unit_of_work_cy as cy_module
-prime_lib = None
+import compilation_functions as funcs
 
 
-def compile_c_exec():
-    gcc_command = [
-        'gcc', '-o', 'unit_of_work',  
-        '-O3',                        
-        'unit_of_work.c'              
-    ]
-    # Run the gcc command
-    result = subprocess.run(
-        gcc_command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False
-    )
-    if result.returncode != 0:
-        print("Compilation failed:")
-        print(result.stderr.decode())
-        return False
-    print("Compilation successful")
-    return True
+def build_required_modules():
+    """build the required modules"""
+    print("building required modules...")
+    print("- pyinstaller:", end="")
+    if funcs.py_installer():
+        print("\t\t\tSUCCESS")
+    else:
+        print("\t\t\tFAILED")
 
-def compile_c_code():
-    """build the 'unit of work' c code"""
-    gcc_command = [
-        'gcc', '-shared', '-o', 'unit_of_work.so',
-        '-fPIC', 'unit_of_work.c'
-    ]
+    print("- c executable:", end="")
+    if funcs.compile_c_exec():
+        print("\t\t\tSUCCESS")
+    else:
+        print("\t\t\tFAILED")
 
-    # Run the gcc command
-    result = subprocess.run(
-        gcc_command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False
-    )
-    if result.returncode != 0:
-        print("Compilation failed:")
-        print(result.stderr.decode())
-        return False
-    return True
+    print("- c shared object:", end="")
+    if funcs.compile_c_code():
+        print("\t\tSUCCESS")
+    else:
+        print("\t\tFAILED")
 
-def py_installer():
-    """run pyinstaller against the python script"""
-    pyinstaller_command = [
-        'pyinstaller', '-y', 'unit_of_work_py.py',
-    ]
-    result = subprocess.run(
-        pyinstaller_command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False
-    )
-    if result.returncode != 0:
-        print("Pyinstaller failed:")
-        print(result.stderr.decode())
-        return False
-    return True
+    print("- cython bindings:", end="")
+    if funcs.build_cython_module():
+        print("\t\tSUCCESS")
+    else:
+        print("\t\tFAILED")
+
+############### RUN FUNCTIONS ################
+
+def run_cython_module():
+    """run the cython module"""
+    #print("...with cython module:", end="")
+    try:
+        import unit_of_work_cy as cy_module  # type: ignore # pylint: disable=import-error disable=import-outside-toplevel
+        val = cy_module.calculate_primes()  # type: ignore # pylint: disable=c-extension-no-member
+        #print(f"\t\t\t\t{val:.6f}s")
+    except Exception as e:
+        print(f"{e}")
+    return val
 
 def run_pyinstaller_exec():
     """run the pyinstaller executable"""
+    #print("...with pyinstaller:", end="")
     result = subprocess.run(
         ['./dist/unit_of_work_py/unit_of_work_py'],
+        stdout=subprocess.PIPE,
         check=False
     )
+    val = float(result.stdout.decode().strip())
+    #print(f"\t\t\t\t{val:.6f}s")
     if result.returncode != 0:
         print("Pyinstaller executable failed:")
         print(result.stderr.decode())
         return False
-    return True
+    return val
 
-def load_c_library():
+def run_c_executable():
+    """run the c executable"""
+    #print("...with native C executable:", end="")
+    ## Don't start a timer, let the executable do it
+    p = subprocess.run(['./unit_of_work', str(LIMIT)], stdout=subprocess.PIPE, check=False)
+    val = float(p.stdout.decode().strip())
+    #print(f"\t\t\t{val:.6f}s")
+    return val
+
+def run_c_library():
     """load the c library and set the function signature"""
-    global prime_lib  # pylint: disable=global-statement
+    # this loads the c library and sets the function signature
     prime_lib = ctypes.CDLL('./unit_of_work.so')
-    prime_lib.calculate_primes.argtypes = [ctypes.c_int]
-    prime_lib.calculate_primes.restype = None
+    prime_lib.unit_of_work.argtypes = [ctypes.c_int]
+    prime_lib.unit_of_work.restype = ctypes.c_double
+
+    #print("...with C library (python import via ctypes):", end="")
+    val = prime_lib.unit_of_work(LIMIT)
+    #print(f"\t{val:.6f}s")
+    return val
+
+def run_python_module():
+    """run the python module"""
+    #print("...with Python module:", end="")
+    elapsed = pymodule.calculate_primes(LIMIT)
+    #print(f"\t\t\t\t{elapsed:.6f}s")
+    return elapsed
+
+############### MAIN ################
 
 if __name__ == "__main__":
     LIMIT = 100000
 
-    # build this for later
-    compile_c_exec()
-    py_installer()
+    build_required_modules()
 
     # START CALCULATIONS
-    print("Calculating prime numbers...")
-
-    print("...with Python module:")
-    ## Start the timer
-    start_time = time.time()
-    pymodule.calculate_primes(LIMIT)
-    end_time = time.time()
-    ## End the timer
-    print(f"- elapsed time: {end_time - start_time:.6f}s")
-
-    # Run the pyinstaller executable (has its own timer)
-    print("...with pyinstaller:")
-    run_pyinstaller_exec()
-
-    # Run the cython module (has its own timer)
-    print("...with cython module")
-    cy_module.calculate_primes()
-
-    # Compile the C code
-    if compile_c_code():
-        load_c_library()
-
-        print("...with C library (python import via ctypes):")
-        ## Start the timer
-        start_time = time.time()
-        prime_lib.calculate_primes(LIMIT)
-        end_time = time.time()
-        ## End the timer
-
-        print(f"- elapsed time: {end_time - start_time:.6f}s")
-    else:
-        sys.exit(1)
-
-    print("...with native C executable:")
-    ## Don't start a timer, let the executable do it
-    subprocess.run(['./unit_of_work', str(LIMIT)], check=False)
+    print("calculating prime numbers up to 100,000...")
+    
+    stats = {
+        "python": [],
+        "pyinstaller": [],
+        "cython": [],
+        "c_library": [],
+        "c_executable": []
+    }
+    for i in range(100):
+        print(f"\rrunning iteration {i+1}", end="", flush=True)
+        stats["python"].append(run_python_module())
+        stats["pyinstaller"].append(run_pyinstaller_exec())
+        stats["cython"].append(run_cython_module())
+        stats["c_library"].append(run_c_library())
+        stats["c_executable"].append(run_c_executable())
+    print("\n")
+    for i in stats:
+        stat = stats[i]
+        print(f"{i}: {(20 - len(i)) * ' '}avg {sum(stat)/len(stat):.6f}s high {max(stat):.6f}s low {min(stat):.6f}s")

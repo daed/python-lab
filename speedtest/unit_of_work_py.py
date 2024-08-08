@@ -8,6 +8,7 @@ def calculate_primes(num_limit: int) -> None:
 
     Sieve of Eratosthenes: https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
     """
+    time_start = time.time()
     if num_limit < 2:
         return  # No primes below 2
 
@@ -23,12 +24,10 @@ def calculate_primes(num_limit: int) -> None:
             # are already known to not be prime
             for multiple in range(number * number, num_limit + 1, number):
                 is_prime[multiple] = False
-    return is_prime
+    time_end = time.time()
+    return time_end - time_start
 
 if __name__ == "__main__":
     LIMIT = 100000
-    start_time = time.time()
-    calculate_primes(100000)
-    end_time = time.time()
-
-    print(f"- elapsed time: {end_time - start_time:.6f}s")
+    elapsed = calculate_primes(100000)
+    print(str(elapsed))
