@@ -38,6 +38,21 @@ def compile_c_code():
         return False
     return True
 
+def build_rust_lib():
+    # Set the working directory to where your Cargo.toml is located
+    cargo_command = ['cargo', 'build', '--release']
+    
+    # Run the cargo build --release command
+    result = subprocess.run(cargo_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False
+    )
+    if result.returncode != 0:
+        print(result.stderr.decode())
+        return False
+    return True
+
 def build_cython_module():
     """build the cython module"""
     cython_command = [

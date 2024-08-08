@@ -6,7 +6,10 @@ a.out
 build/
 bin/
 lib/
+lib64/
 unit_of_work_cy.c
 dist/
 __pycache__/
 unit_of_work
+pyvenv.cfg
+target/
