@@ -1,0 +1,11 @@
+a.out
+*.so
+*.o
+*.d
+*.a
+build/
+bin/
+lib/
+unit_of_work_cy.c
+dist/
+__pycache__/
