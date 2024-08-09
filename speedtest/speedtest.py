@@ -27,6 +27,12 @@ def build_required_modules():
     else:
         print("\t\tFAILED")
 
+    print("- Rust shared object:", end="")
+    if funcs.build_rust_lib():
+        print("\t\tSUCCESS")
+    else:
+        print("\t\tFAILED")
+
     print("- cython bindings:", end="")
     if funcs.build_cython_module():
         print("\t\tSUCCESS")
@@ -83,6 +89,18 @@ def run_c_library():
     #print(f"\t{val:.6f}s")
     return val
 
+def run_rust_library():
+    # Load the shared object file
+    lib = ctypes.CDLL('./target/release/libunit_of_work.so')
+
+    # Define the function signature
+    lib.unit_of_work.argtypes = (ctypes.c_size_t,)
+    lib.unit_of_work.restype = ctypes.c_double
+
+    elapsed = lib.unit_of_work(LIMIT)
+    return elapsed
+
+
 def run_python_module():
     """run the python module"""
     #print("...with Python module:", end="")
@@ -105,7 +123,8 @@ if __name__ == "__main__":
         "pyinstaller": [],
         "cython": [],
         "c_library": [],
-        "c_executable": []
+        "c_executable": [],
+        "rust_library": [],
     }
     for i in range(100):
         print(f"\rrunning iteration {i+1}", end="", flush=True)
@@ -114,6 +133,7 @@ if __name__ == "__main__":
         stats["cython"].append(run_cython_module())
         stats["c_library"].append(run_c_library())
         stats["c_executable"].append(run_c_executable())
+        stats["rust_library"].append(run_rust_library())
     print("\n")
     for i in stats:
         stat = stats[i]

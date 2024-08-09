@@ -12,6 +12,7 @@ measuring in real world contexts if possible
 pyenv
 cython
 pyinstaller
+cargo
 
 ## data
 

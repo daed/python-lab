@@ -1,0 +1,11 @@
+[package]
+name = "unit_of_work"
+version = "0.1.0"
+
+[[bin]]
+name = "unit_of_work"
+path = "unit_of_work.rs"
+
+[lib]
+crate-type = ["cdylib"]
+path = "unit_of_work.rs"
