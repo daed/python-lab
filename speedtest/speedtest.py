@@ -123,8 +123,8 @@ if __name__ == "__main__":
         "pyinstaller": [],
         "cython": [],
         "c_library": [],
-        "c_executable": [],
         "rust_library": [],
+        "c_executable": [],
     }
     for i in range(100):
         print(f"\rrunning iteration {i+1}", end="", flush=True)
@@ -132,8 +132,8 @@ if __name__ == "__main__":
         stats["pyinstaller"].append(run_pyinstaller_exec())
         stats["cython"].append(run_cython_module())
         stats["c_library"].append(run_c_library())
-        stats["c_executable"].append(run_c_executable())
         stats["rust_library"].append(run_rust_library())
+        stats["c_executable"].append(run_c_executable())
     print("\n")
     for i in stats:
         stat = stats[i]
